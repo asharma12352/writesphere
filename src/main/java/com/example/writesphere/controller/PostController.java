@@ -82,18 +82,17 @@ public class PostController {
 
     // Show edit post page
     @GetMapping("/post/edit/{id}")
-    public String editPostPage(@PathVariable Long id,
-                               HttpSession session,
-                               Model model) {
-        if (session.getAttribute("loggedInUser") == null) {
+    public String editPostPage(@PathVariable Long id, HttpSession session, Model model) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null) {
             return "redirect:/login";
         }
         Optional<Post> post = postService.getPostById(id);
-        if (post.isPresent()) {
-            model.addAttribute("post", post.get());
-            return "edit-post";
+        if (post.isEmpty() || !isOwner(post.get(), loggedInUser)) {
+            return "redirect:/home";
         }
-        return "redirect:/home";
+        model.addAttribute("post", post.get());
+        return "edit-post";
     }
 
     // Handle edit post form
@@ -103,19 +102,22 @@ public class PostController {
                            @RequestParam String content,
                            @RequestParam String type,
                            HttpSession session) {
-        if (session.getAttribute("loggedInUser") == null) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null) {
             return "redirect:/login";
         }
         Optional<Post> existingPost = postService.getPostById(id);
-        if (existingPost.isPresent()) {
-            Post post = existingPost.get();
-            post.setTitle(title);
-            post.setContent(content);
-            post.setType(type);
-            postService.updatePost(post);
+        if (existingPost.isEmpty() || !isOwner(existingPost.get(), loggedInUser)) {
+            return "redirect:/home";
         }
+        Post post = existingPost.get();
+        post.setTitle(title);
+        post.setContent(content);
+        post.setType(type);
+        postService.updatePost(post);
         return "redirect:/home";
     }
+
     // Profile page
     @GetMapping("/profile")
     public String profilePage(HttpSession session, Model model) {
@@ -155,12 +157,22 @@ public class PostController {
         return "search-results";
     }
     // Delete post
-    @GetMapping("/post/delete/{id}")
+    @PostMapping("/post/delete/{id}")
     public String deletePost(@PathVariable Long id, HttpSession session) {
-        if (session.getAttribute("loggedInUser") == null) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null) {
             return "redirect:/login";
+        }
+        Optional<Post> post = postService.getPostById(id);
+        if (post.isEmpty() || !isOwner(post.get(), loggedInUser)) {
+            return "redirect:/home";
         }
         postService.deletePost(id);
         return "redirect:/home";
+    }
+
+    // Ownership check used by edit and delete
+    private boolean isOwner(Post post, User user) {
+        return post.getUser().getId().equals(user.getId());
     }
 }
