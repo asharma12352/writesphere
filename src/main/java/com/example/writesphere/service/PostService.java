@@ -18,6 +18,10 @@ public class PostService {
         return postRepository.save(post);
     }
 
+    public List<Post> searchPosts(String keyword) {
+        return postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword);
+    }
+
     public List<Post> getAllPosts() {
         return postRepository.findAll();
     }

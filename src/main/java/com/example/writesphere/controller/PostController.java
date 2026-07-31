@@ -137,21 +137,12 @@ public class PostController {
     }
     // Search posts
     @GetMapping("/search")
-    public String searchPosts(@RequestParam String keyword,
-                              HttpSession session,
-                              Model model) {
+    public String searchPosts(@RequestParam String keyword, HttpSession session, Model model) {
         User loggedInUser = (User) session.getAttribute("loggedInUser");
         if (loggedInUser == null) {
             return "redirect:/login";
         }
-        List<Post> allPosts = postService.getAllPosts();
-        List<Post> results = allPosts.stream()
-                .filter(p -> p.getTitle().toLowerCase()
-                        .contains(keyword.toLowerCase()) ||
-                        p.getContent().toLowerCase()
-                                .contains(keyword.toLowerCase()))
-                .toList();
-        model.addAttribute("posts", results);
+        model.addAttribute("posts", postService.searchPosts(keyword));
         model.addAttribute("user", loggedInUser);
         model.addAttribute("keyword", keyword);
         return "search-results";

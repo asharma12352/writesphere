@@ -10,4 +10,6 @@ import java.util.List;
 public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByUser(User user);
     List<Post> findByType(String type);
+    List<Post> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(
+            String titleKeyword, String contentKeyword);
 }
