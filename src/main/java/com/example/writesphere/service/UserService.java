@@ -2,16 +2,23 @@ package com.example.writesphere.service;
 
 import com.example.writesphere.model.User;
 import com.example.writesphere.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    // Constructor injection - Spring passes both beans in automatically
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public User registerUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));   // hash before saving
         return userRepository.save(user);
     }
 
@@ -25,9 +32,9 @@ public class UserService {
 
     public boolean loginUser(String username, String password) {
         User user = userRepository.findByUsername(username);
-        if (user != null && user.getPassword().equals(password)) {
-            return true;
+        if (user == null) {
+            return false;
         }
-        return false;
+        return passwordEncoder.matches(password, user.getPassword());
     }
 }
